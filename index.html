@@ -1,14 +1,512 @@
 <!DOCTYPE html>
-<html lang='ko'>
+<html lang="ko">
 <head>
-  <meta charset='UTF-8'>
-  <title>나의 첫 서비스</title>
-  <link rel='stylesheet' href='style.css'>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>소유권이전등기신청서(매매) 작성</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: "Malgun Gothic", "맑은 고딕", sans-serif;
+      background: #f5f5f5;
+      color: #333;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    .form-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .form-card h2 {
+      margin: 0 0 16px;
+      font-size: 1.1rem;
+      color: #1a56db;
+      border-bottom: 2px solid #1a56db;
+      padding-bottom: 8px;
+    }
+    .form-section { margin-bottom: 28px; }
+    .form-section:last-child { margin-bottom: 0; }
+    .form-group {
+      margin-bottom: 14px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      color: #555;
+      margin-bottom: 4px;
+    }
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #1a56db;
+      box-shadow: 0 0 0 2px rgba(26, 86, 219, 0.15);
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .btn-calc {
+      margin-top: 6px;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      background: #1a56db;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn-calc:hover { background: #1544b0; }
+    .preview-wrap {
+      position: sticky;
+      top: 20px;
+    }
+    .preview-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 32px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      aspect-ratio: 1 / 1.414;
+      max-height: calc(100vh - 80px);
+      overflow: auto;
+    }
+    .preview-inner {
+      width: 100%;
+      height: 100%;
+      min-height: 700px;
+      padding: 24px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .preview-title {
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 16px;
+    }
+    .preview-top-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+      font-size: 11px;
+    }
+    .preview-top-table td {
+      border: 1px solid #333;
+      padding: 4px 8px;
+      width: 25%;
+    }
+    .preview-section-title {
+      font-weight: bold;
+      background: #f0f0f0;
+      padding: 4px 8px;
+      margin: 12px 0 6px;
+    }
+    .preview-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    .preview-table th,
+    .preview-table td {
+      border: 1px solid #333;
+      padding: 6px 8px;
+    }
+    .preview-table th {
+      background: #f5f5f5;
+      font-weight: 600;
+      width: 100px;
+    }
+    .preview-table .wide { width: auto; }
+    .preview-attach {
+      margin-top: 12px;
+    }
+    .preview-attach label {
+      display: block;
+      margin: 2px 0;
+      font-size: 11px;
+    }
+    .preview-sign {
+      margin-top: 24px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 40px;
+      font-size: 11px;
+    }
+    .print-zone {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 20px 0;
+    }
+    .btn-print {
+      padding: 14px 40px;
+      font-size: 1rem;
+      background: #1a56db;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-print:hover { background: #1544b0; }
+    @media (max-width: 900px) {
+      .container { grid-template-columns: 1fr; }
+      .preview-wrap { position: static; }
+      .preview-card { max-height: none; }
+    }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .form-card, .print-zone, .btn-print { display: none !important; }
+      .container { display: block; max-width: none; }
+      .preview-wrap { position: static; }
+      .preview-card {
+        box-shadow: none;
+        padding: 0;
+        max-height: none;
+        overflow: visible;
+      }
+      .preview-inner {
+        min-height: auto;
+        padding: 15px;
+      }
+      @page { size: A4; margin: 15mm; }
+    }
+  </style>
 </head>
 <body>
-  <h1>안녕하세요 👋</h1>
-  <p>나의 첫 AI 서비스입니다.</p>
-  <button id='btn'>클릭해보세요</button>
-  <script src='app.js'></script>
-</body>
+  <div class="container">
+    <div class="form-card">
+      <h2>섹션1: 부동산 정보</h2>
+      <div class="form-section">
+        <div class="form-group">
+          <label>소재지</label>
+          <input type="text" id="address" placeholder="예: 서울시 강남구 역삼동 123">
+        </div>
+        <div class="form-group">
+          <label>지목</label>
+          <select id="landType">
+            <option value="">선택</option>
+            <option value="대">대</option>
+            <option value="전">전</option>
+            <option value="답">답</option>
+            <option value="임야">임야</option>
+            <option value="도로">도로</option>
+            <option value="기타">기타</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>면적 (㎡)</label>
+          <input type="number" id="area" placeholder="면적" min="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>거래신고관리번호</label>
+          <input type="text" id="reportNo" placeholder="거래신고관리번호">
+        </div>
+        <div class="form-group">
+          <label>거래가액 (원)</label>
+          <input type="text" id="price" placeholder="숫자 입력 시 천 단위 콤마 자동">
+        </div>
+      </div>
 
+      <h2>섹션2: 당사자 정보</h2>
+      <div class="form-section">
+        <div class="form-group">
+          <label>등기원인 날짜</label>
+          <input type="date" id="causeDate">
+        </div>
+        <div class="form-group">
+          <label>이전할 지분</label>
+          <input type="text" id="shareTransfer" placeholder="예: 1/1">
+        </div>
+        <div class="form-group">
+          <label>등기의무자(매도인) - 성명</label>
+          <input type="text" id="obligorName" placeholder="성명">
+        </div>
+        <div class="form-group">
+          <label>등기의무자 - 주민등록번호</label>
+          <input type="text" id="obligorJumin" placeholder="앞6자리-뒤7자리" maxlength="14">
+        </div>
+        <div class="form-group">
+          <label>등기의무자 - 주소</label>
+          <input type="text" id="obligorAddr" placeholder="주소">
+        </div>
+        <div class="form-group">
+          <label>등기의무자 - 지분</label>
+          <input type="text" id="obligorShare" placeholder="예: 1/1">
+        </div>
+        <div class="form-group">
+          <label>등기권리자(매수인) - 성명</label>
+          <input type="text" id="rightHolderName" placeholder="성명">
+        </div>
+        <div class="form-group">
+          <label>등기권리자 - 주민등록번호</label>
+          <input type="text" id="rightHolderJumin" placeholder="앞6자리-뒤7자리" maxlength="14">
+        </div>
+        <div class="form-group">
+          <label>등기권리자 - 주소</label>
+          <input type="text" id="rightHolderAddr" placeholder="주소">
+        </div>
+        <div class="form-group">
+          <label>등기권리자 - 지분</label>
+          <input type="text" id="rightHolderShare" placeholder="예: 1/1">
+        </div>
+      </div>
+
+      <h2>섹션3: 세금 및 수수료</h2>
+      <div class="form-section">
+        <div class="form-group">
+          <label>시가표준액 (원)</label>
+          <input type="text" id="standardValue" placeholder="천 단위 콤마 자동">
+        </div>
+        <div class="form-group">
+          <label>취득세 (원)</label>
+          <div class="form-row">
+            <input type="text" id="acquisitionTax" placeholder="취득세">
+            <button type="button" class="btn-calc" id="btnCalcTax">시가표준액의 1.1% 계산</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>지방교육세 (원) - 취득세의 10%</label>
+          <div class="form-row">
+            <input type="text" id="localEduTax" placeholder="자동 계산">
+            <button type="button" class="btn-calc" id="btnCalcEdu">취득세의 10% 계산</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>농어촌특별세 (원)</label>
+          <input type="text" id="ruralTax" placeholder="농어촌특별세">
+        </div>
+        <div class="form-group">
+          <label>등기신청수수료 (원)</label>
+          <input type="text" id="regFee" placeholder="등기신청수수료">
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-wrap">
+      <div class="preview-card">
+        <div class="preview-inner" id="preview">
+          <div class="preview-title">소유권이전등기신청서(매매)</div>
+          <table class="preview-top-table">
+            <tr>
+              <td>즉시접수</td>
+              <td>당일접수</td>
+              <td>제출자</td>
+              <td>총 건</td>
+            </tr>
+          </table>
+          <div class="preview-section-title">1. 부동산 표시</div>
+          <table class="preview-table">
+            <tr><th>소재지</th><td class="wide" id="pvAddress">-</td></tr>
+            <tr><th>지목</th><td id="pvLandType">-</td></tr>
+            <tr><th>면적</th><td id="pvArea">- ㎡</td></tr>
+            <tr><th>거래신고관리번호</th><td id="pvReportNo">-</td></tr>
+            <tr><th>거래가액</th><td id="pvPrice">-</td></tr>
+          </table>
+          <div class="preview-section-title">2. 등기원인 등</div>
+          <table class="preview-table">
+            <tr><th>등기원인</th><td id="pvCauseDate">-</td></tr>
+            <tr><th>등기목적</th><td>소유권이전</td></tr>
+            <tr><th>이전할 지분</th><td id="pvShareTransfer">-</td></tr>
+          </table>
+          <div class="preview-section-title">3. 등기의무자 / 등기권리자</div>
+          <table class="preview-table">
+            <thead>
+              <tr><th>구분</th><th>성명</th><th>주민등록번호</th><th>주소</th><th>지분</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>등기의무자</td>
+                <td id="pvObligorName">-</td>
+                <td id="pvObligorJumin">-</td>
+                <td id="pvObligorAddr">-</td>
+                <td id="pvObligorShare">-</td>
+              </tr>
+              <tr>
+                <td>등기권리자</td>
+                <td id="pvRightHolderName">-</td>
+                <td id="pvRightHolderJumin">-</td>
+                <td id="pvRightHolderAddr">-</td>
+                <td id="pvRightHolderShare">-</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="preview-section-title">4. 시가표준액 및 세금</div>
+          <table class="preview-table">
+            <tr><th>시가표준액</th><td id="pvStandardValue">-</td></tr>
+            <tr><th>취득세</th><td id="pvAcquisitionTax">-</td></tr>
+            <tr><th>지방교육세</th><td id="pvLocalEduTax">-</td></tr>
+            <tr><th>농어촌특별세</th><td id="pvRuralTax">-</td></tr>
+            <tr><th>등기신청수수료</th><td id="pvRegFee">-</td></tr>
+          </table>
+          <div class="preview-section-title">5. 첨부서면</div>
+          <div class="preview-attach" id="pvAttach">
+            <label><input type="checkbox" id="attach1"> 매매계약서</label>
+            <label><input type="checkbox" id="attach2"> 인감증명서</label>
+            <label><input type="checkbox" id="attach3"> 등본</label>
+            <label><input type="checkbox" id="attach4"> 취득세 납부증명서</label>
+            <label><input type="checkbox" id="attach5"> 기타</label>
+          </div>
+          <div class="preview-sign">
+            <span>신청일: <strong id="pvAppDate">-</strong></span>
+            <span>신청인: ________________ (인)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="print-zone">
+      <button type="button" class="btn-print" id="btnPrint">출력하기</button>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      function $(id) { return document.getElementById(id); }
+      function formatNumber(val) {
+        if (val === '' || val == null) return '';
+        var n = String(val).replace(/[^0-9]/g, '');
+        return n ? Number(n).toLocaleString() : '';
+      }
+      function parseNumber(val) {
+        if (val === '' || val == null) return 0;
+        return parseInt(String(val).replace(/[^0-9]/g, ''), 10) || 0;
+      }
+      function formatJumin(val) {
+        var s = String(val).replace(/[^0-9]/g, '').slice(0, 13);
+        if (s.length <= 6) return s;
+        return s.slice(0, 6) + '-' + s.slice(6);
+      }
+
+      var priceEl = $('price');
+      var standardValueEl = $('standardValue');
+      var acquisitionTaxEl = $('acquisitionTax');
+      var localEduTaxEl = $('localEduTax');
+      var ruralTaxEl = $('ruralTax');
+      var regFeeEl = $('regFee');
+      var obligorJuminEl = $('obligorJumin');
+      var rightHolderJuminEl = $('rightHolderJumin');
+
+      priceEl.addEventListener('input', function() {
+        var pos = this.selectionStart;
+        var prev = this.value.length;
+        this.value = formatNumber(this.value);
+        this.setSelectionRange(pos + (this.value.length - prev), pos + (this.value.length - prev));
+        updatePreview();
+      });
+      standardValueEl.addEventListener('input', function() {
+        var pos = this.selectionStart;
+        var prev = this.value.length;
+        this.value = formatNumber(this.value);
+        this.setSelectionRange(pos + (this.value.length - prev), pos + (this.value.length - prev));
+        updatePreview();
+      });
+      acquisitionTaxEl.addEventListener('input', function() {
+        this.value = formatNumber(this.value);
+        updatePreview();
+      });
+      localEduTaxEl.addEventListener('input', function() {
+        this.value = formatNumber(this.value);
+        updatePreview();
+      });
+      ruralTaxEl.addEventListener('input', function() {
+        this.value = formatNumber(this.value);
+        updatePreview();
+      });
+      regFeeEl.addEventListener('input', function() {
+        this.value = formatNumber(this.value);
+        updatePreview();
+      });
+      obligorJuminEl.addEventListener('input', function() {
+        this.value = formatJumin(this.value);
+        updatePreview();
+      });
+      rightHolderJuminEl.addEventListener('input', function() {
+        this.value = formatJumin(this.value);
+        updatePreview();
+      });
+
+      $('btnCalcTax').addEventListener('click', function() {
+        var v = parseNumber(standardValueEl.value);
+        acquisitionTaxEl.value = formatNumber(Math.floor(v * 0.011));
+        updatePreview();
+        var tax = parseNumber(acquisitionTaxEl.value);
+        localEduTaxEl.value = formatNumber(Math.floor(tax * 0.1));
+        updatePreview();
+      });
+      $('btnCalcEdu').addEventListener('click', function() {
+        var tax = parseNumber(acquisitionTaxEl.value);
+        localEduTaxEl.value = formatNumber(Math.floor(tax * 0.1));
+        updatePreview();
+      });
+
+      var ids = ['address','landType','area','reportNo','price','causeDate','shareTransfer',
+        'obligorName','obligorJumin','obligorAddr','obligorShare',
+        'rightHolderName','rightHolderJumin','rightHolderAddr','rightHolderShare',
+        'standardValue','acquisitionTax','localEduTax','ruralTax','regFee'];
+      ids.forEach(function(id) {
+        var el = $(id);
+        if (el && el.type !== 'date') el.addEventListener('input', updatePreview);
+        if (el && el.type === 'date') el.addEventListener('change', updatePreview);
+      });
+      $('landType').addEventListener('change', updatePreview);
+
+      function updatePreview() {
+        $('pvAddress').textContent = $('address').value.trim() || '-';
+        $('pvLandType').textContent = $('landType').value || '-';
+        var area = $('area').value.trim();
+        $('pvArea').textContent = area ? area + ' ㎡' : '-';
+        $('pvReportNo').textContent = $('reportNo').value.trim() || '-';
+        $('pvPrice').textContent = $('price').value ? $('price').value + ' 원' : '-';
+
+        var causeDate = $('causeDate').value;
+        $('pvCauseDate').textContent = causeDate ? causeDate.replace(/-/g, '.') : '-';
+        $('pvShareTransfer').textContent = $('shareTransfer').value.trim() || '-';
+
+        $('pvObligorName').textContent = $('obligorName').value.trim() || '-';
+        $('pvObligorJumin').textContent = $('obligorJumin').value.trim() || '-';
+        $('pvObligorAddr').textContent = $('obligorAddr').value.trim() || '-';
+        $('pvObligorShare').textContent = $('obligorShare').value.trim() || '-';
+
+        $('pvRightHolderName').textContent = $('rightHolderName').value.trim() || '-';
+        $('pvRightHolderJumin').textContent = $('rightHolderJumin').value.trim() || '-';
+        $('pvRightHolderAddr').textContent = $('rightHolderAddr').value.trim() || '-';
+        $('pvRightHolderShare').textContent = $('rightHolderShare').value.trim() || '-';
+
+        $('pvStandardValue').textContent = $('standardValue').value ? $('standardValue').value + ' 원' : '-';
+        $('pvAcquisitionTax').textContent = $('acquisitionTax').value ? $('acquisitionTax').value + ' 원' : '-';
+        $('pvLocalEduTax').textContent = $('localEduTax').value ? $('localEduTax').value + ' 원' : '-';
+        $('pvRuralTax').textContent = $('ruralTax').value ? $('ruralTax').value + ' 원' : '-';
+        $('pvRegFee').textContent = $('regFee').value ? $('regFee').value + ' 원' : '-';
+
+        var today = new Date();
+        var y = today.getFullYear(), m = String(today.getMonth() + 1).padStart(2, '0'), d = String(today.getDate()).padStart(2, '0');
+        $('pvAppDate').textContent = y + '.' + m + '.' + d;
+      }
+
+      $('btnPrint').addEventListener('click', function() {
+        window.print();
+      });
+
+      updatePreview();
+    })();
+  </script>
+</body>
+</html>
