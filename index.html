@@ -142,6 +142,80 @@
       font-size: 0.8rem;
       color: #666;
     }
+    .ai-section {
+      margin-bottom: 20px;
+      padding: 16px;
+      background: #f0fdf4;
+      border: 1px solid #16a34a;
+      border-radius: 8px;
+    }
+    .ai-section label {
+      display: block;
+      font-size: 0.85rem;
+      color: #166534;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .ai-section input[type=password] {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #16a34a;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+    }
+    .ai-section textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 10px;
+      border: 1px solid #16a34a;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      resize: vertical;
+      margin-bottom: 10px;
+      font-family: inherit;
+    }
+    .ai-section textarea:focus {
+      outline: none;
+      border-color: #15803d;
+      box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+    }
+    .btn-ai-fill {
+      padding: 10px 20px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      background: #16a34a;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-ai-fill:hover { background: #15803d; }
+    .btn-ai-fill:disabled {
+      background: #86efac;
+      cursor: not-allowed;
+    }
+    .ai-spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: ai-spin 0.8s linear infinite;
+    }
+    @keyframes ai-spin { to { transform: rotate(360deg); } }
+    .ai-message {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      min-height: 20px;
+    }
+    .ai-message.success { color: #15803d; }
+    .ai-message.error { color: #b91c1c; }
     @media (max-width: 900px) {
       .main { flex-direction: column; }
       .form-panel { width: 100%; max-height: 45%; }
@@ -156,6 +230,15 @@
 
   <main class="main">
     <div class="form-panel">
+      <div class="ai-section">
+        <label for="apiKey">Anthropic API 키</label>
+        <input type="password" id="apiKey" placeholder="sk-ant-api..." autocomplete="off">
+        <label for="aiInput">거래 내용 (자연어)</label>
+        <textarea id="aiInput" rows="5" placeholder="거래 내용을 자유롭게 입력하세요. 예: 서울 강남구 역삼동 123 대지 100㎡, 2024년 3월 15일 매매계약, 매도인 홍길동(주민번호 800101-1234567), 매수인 김철수..."></textarea>
+        <button type="button" class="btn-ai-fill" id="btnAiFill">AI로 자동 채우기</button>
+        <div class="ai-message" id="aiMessage" aria-live="polite"></div>
+      </div>
+
       <div class="file-upload-wrap">
         <label>원본 PDF</label>
         <p class="file-hint">기본: <strong>소유권이전등기신청서(매매).pdf</strong> (이 HTML과 같은 폴더). 다른 양식을 쓰려면 선택하세요.</p>
@@ -287,8 +370,25 @@
       var fontUrlTtf = 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/notosanskr/NotoSansKR-Regular.ttf';
       var defaultPdfPath = '소유권이전등기신청서(매매).pdf';
       var cachedDefaultPdfBytes = null;
+      var AI_STORAGE_KEY = '소유권이전등기_anthropic_api_key';
+      var SYSTEM_PROMPT = '당신은 부동산 등기 문서 분석 전문가입니다.\n사용자의 자연어 입력에서 소유권이전등기신청서에 필요한 정보를 추출하세요.\n반드시 아래 JSON 형식으로만 응답하고 다른 텍스트는 절대 포함하지 마세요:\n{\n  "address": "소재지",\n  "reportNo": "거래신고관리번호",\n  "price": "거래가액(숫자와 콤마만)",\n  "causeYear": "등기원인년도",\n  "causeMonth": "등기원인월",\n  "causeDay": "등기원인일",\n  "shareTransfer": "이전할지분(없으면 1/1)",\n  "obligorName": "등기의무자(매도인)성명",\n  "obligorJumin": "등기의무자주민번호(없으면 빈값)",\n  "obligorAddr": "등기의무자주소",\n  "obligorShare": "등기의무자지분(없으면 1/1)",\n  "rightName": "등기권리자(매수인)성명",\n  "rightJumin": "등기권리자주민번호(없으면 빈값)",\n  "rightAddr": "등기권리자주소",\n  "rightShare": "등기권리자지분(없으면 1/1)",\n  "acqTax": "취득세(없으면 빈값)",\n  "eduTax": "지방교육세(없으면 빈값)",\n  "appYear": "신청년도",\n  "appMonth": "신청월",\n  "appDay": "신청일",\n  "court": "지방법원명(없으면 빈값)"\n}';
 
       function $(id) { return document.getElementById(id); }
+
+      (function initApiKey() {
+        try {
+          var saved = localStorage.getItem(AI_STORAGE_KEY);
+          if (saved && $('apiKey')) $('apiKey').value = saved;
+        } catch (e) {}
+        if ($('apiKey')) {
+          $('apiKey').addEventListener('change', function() {
+            try { localStorage.setItem(AI_STORAGE_KEY, this.value); } catch (e) {}
+          });
+          $('apiKey').addEventListener('input', function() {
+            try { localStorage.setItem(AI_STORAGE_KEY, this.value); } catch (e) {}
+          });
+        }
+      })();
       function formatJumin(val) {
         var s = String(val).replace(/[^0-9]/g, '').slice(0, 13);
         if (s.length <= 6) return s;
@@ -296,6 +396,98 @@
       }
       $('obligorJumin').addEventListener('input', function() { this.value = formatJumin(this.value); });
       $('rightHolderJumin').addEventListener('input', function() { this.value = formatJumin(this.value); });
+
+      function setEl(id, val) {
+        var el = $(id);
+        if (el && val != null && val !== '') el.value = String(val);
+      }
+      function showAiMessage(text, isError) {
+        var el = $('aiMessage');
+        if (!el) return;
+        el.textContent = text;
+        el.className = 'ai-message ' + (isError ? 'error' : 'success');
+      }
+      function extractJsonFromText(text) {
+        var s = (text || '').trim();
+        var m = s.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (m) s = m[1].trim();
+        return JSON.parse(s);
+      }
+      function fillFormFromData(data) {
+        setEl('address', data.address);
+        setEl('reportNo', data.reportNo);
+        setEl('price', data.price);
+        setEl('causeYear', data.causeYear);
+        setEl('causeMonth', data.causeMonth);
+        setEl('causeDay', data.causeDay);
+        setEl('shareTransfer', data.shareTransfer || '1/1');
+        setEl('obligorName', data.obligorName);
+        setEl('obligorJumin', data.obligorJumin);
+        setEl('obligorAddr', data.obligorAddr);
+        setEl('obligorShare', data.obligorShare || '1/1');
+        setEl('rightHolderName', data.rightName);
+        setEl('rightHolderJumin', data.rightJumin);
+        setEl('rightHolderAddr', data.rightAddr);
+        setEl('rightHolderShare', data.rightShare || '1/1');
+        setEl('acquisitionTax', data.acqTax);
+        setEl('localEduTax', data.eduTax);
+        setEl('appYear', data.appYear);
+        setEl('appMonth', data.appMonth);
+        setEl('appDay', data.appDay);
+      }
+
+      $('btnAiFill').addEventListener('click', async function() {
+        var apiKey = ($('apiKey') && $('apiKey').value) ? $('apiKey').value.trim() : '';
+        if (!apiKey) {
+          showAiMessage('API 키를 입력해주세요.', true);
+          return;
+        }
+        var userText = ($('aiInput') && $('aiInput').value) ? $('aiInput').value.trim() : '';
+        var btn = $('btnAiFill');
+        var msgEl = $('aiMessage');
+        showAiMessage('', false);
+        btn.disabled = true;
+        btn.innerHTML = '<span class="ai-spinner"></span> 처리 중...';
+        try {
+          var res = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'x-api-key': apiKey,
+              'anthropic-version': '2023-06-01',
+              'content-type': 'application/json',
+              'anthropic-dangerous-direct-browser-access': 'true'
+            },
+            body: JSON.stringify({
+              model: 'claude-opus-4-6',
+              max_tokens: 1024,
+              system: SYSTEM_PROMPT,
+              messages: [{ role: 'user', content: userText || '위 내용에서 등기 정보를 추출해 주세요.' }]
+            })
+          });
+          if (!res.ok) {
+            var errBody = await res.text();
+            throw new Error(res.status === 401 ? 'API 키를 확인해주세요.' : (errBody || 'API 연결 실패'));
+          }
+          var json = await res.json();
+          var text = (json.content && json.content[0] && json.content[0].text) ? json.content[0].text : '';
+          if (!text) throw new Error('AI 응답이 비어 있습니다.');
+          var data = extractJsonFromText(text);
+          fillFormFromData(data);
+          showAiMessage('✅ AI 자동입력 완료! 내용을 확인하고 수정하세요.', false);
+        } catch (err) {
+          var errMsg = (err && err.message) ? err.message : String(err);
+          if (errMsg.includes('JSON') || errMsg.includes('parse') || errMsg.includes('Unexpected')) {
+            showAiMessage('AI 응답 파싱 실패. 다시 시도해주세요.', true);
+          } else if (errMsg.includes('Failed to fetch') || errMsg.includes('NetworkError')) {
+            showAiMessage('API 연결 실패. 키를 확인해주세요.', true);
+          } else {
+            showAiMessage(errMsg, true);
+          }
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'AI로 자동 채우기';
+        }
+      });
 
       function showPdfInPreview(urlOrBlob) {
         var placeholder = $('previewPlaceholder');
