@@ -1,0 +1,22 @@
+💻 코드
+body {
+  font-family: 'Malgun Gothic', sans-serif;
+  max-width: 600px;
+  margin: 50px auto;
+  text-align: center;
+  background: #f0f4ff;
+}
+ 
+h1 { color: #2563EB; }
+ 
+button {
+  background: #2563EB;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+ 
