@@ -3,509 +3,423 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>소유권이전등기신청서(매매) 작성</title>
+  <title>소유권이전등기신청서 자동작성기</title>
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
+  <script src="https://unpkg.com/downloadjs@1.4.7"></script>
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      padding: 20px;
+      padding: 0;
       font-family: "Malgun Gothic", "맑은 고딕", sans-serif;
       background: #f5f5f5;
       color: #333;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      align-items: start;
-    }
-    .form-card {
+    .header {
+      padding: 16px 24px;
       background: #fff;
-      border-radius: 12px;
-      padding: 24px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      border-bottom: 1px solid #e0e0e0;
+      flex-shrink: 0;
     }
-    .form-card h2 {
-      margin: 0 0 16px;
-      font-size: 1.1rem;
+    .header h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      color: #1a56db;
+      font-weight: 700;
+    }
+    .main {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+    }
+    .form-panel {
+      width: 40%;
+      min-width: 320px;
+      background: #fff;
+      border-right: 1px solid #e0e0e0;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    .form-panel h2 {
+      margin: 0 0 12px;
+      font-size: 1rem;
       color: #1a56db;
       border-bottom: 2px solid #1a56db;
-      padding-bottom: 8px;
+      padding-bottom: 6px;
     }
-    .form-section { margin-bottom: 28px; }
-    .form-section:last-child { margin-bottom: 0; }
-    .form-group {
-      margin-bottom: 14px;
-    }
+    .form-section { margin-bottom: 20px; }
+    .form-group { margin-bottom: 12px; }
     .form-group label {
       display: block;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: #555;
       margin-bottom: 4px;
     }
-    .form-group input,
-    .form-group select {
+    .form-group input {
       width: 100%;
-      padding: 10px 12px;
+      padding: 8px 10px;
       border: 1px solid #ddd;
       border-radius: 6px;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
     }
-    .form-group input:focus,
-    .form-group select:focus {
+    .form-group input:focus {
       outline: none;
       border-color: #1a56db;
-      box-shadow: 0 0 0 2px rgba(26, 86, 219, 0.15);
     }
     .form-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
     }
-    .btn-calc {
-      margin-top: 6px;
-      padding: 6px 12px;
-      font-size: 0.85rem;
-      background: #1a56db;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
+    .preview-panel {
+      width: 60%;
+      min-width: 0;
+      background: #888;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
     }
-    .btn-calc:hover { background: #1544b0; }
-    .preview-wrap {
-      position: sticky;
-      top: 20px;
-    }
-    .preview-card {
-      background: #fff;
-      border-radius: 12px;
-      padding: 32px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-      aspect-ratio: 1 / 1.414;
-      max-height: calc(100vh - 80px);
-      overflow: auto;
-    }
-    .preview-inner {
+    .preview-panel iframe {
       width: 100%;
       height: 100%;
-      min-height: 700px;
-      padding: 24px;
-      font-size: 12px;
-      line-height: 1.4;
+      min-height: 500px;
+      border: none;
+      background: #fff;
+      border-radius: 4px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.2);
     }
-    .preview-title {
+    .preview-placeholder {
+      color: #fff;
+      font-size: 0.95rem;
       text-align: center;
-      font-size: 18px;
-      font-weight: bold;
-      margin-bottom: 16px;
+      padding: 20px;
     }
-    .preview-top-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 16px;
-      font-size: 11px;
+    .footer {
+      padding: 16px 24px;
+      background: #fff;
+      border-top: 1px solid #e0e0e0;
+      flex-shrink: 0;
+      text-align: center;
     }
-    .preview-top-table td {
-      border: 1px solid #333;
-      padding: 4px 8px;
-      width: 25%;
-    }
-    .preview-section-title {
-      font-weight: bold;
-      background: #f0f0f0;
-      padding: 4px 8px;
-      margin: 12px 0 6px;
-    }
-    .preview-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 11px;
-    }
-    .preview-table th,
-    .preview-table td {
-      border: 1px solid #333;
-      padding: 6px 8px;
-    }
-    .preview-table th {
-      background: #f5f5f5;
+    .btn-download {
+      padding: 14px 48px;
+      font-size: 1.05rem;
       font-weight: 600;
-      width: 100px;
-    }
-    .preview-table .wide { width: auto; }
-    .preview-attach {
-      margin-top: 12px;
-    }
-    .preview-attach label {
-      display: block;
-      margin: 2px 0;
-      font-size: 11px;
-    }
-    .preview-sign {
-      margin-top: 24px;
-      display: flex;
-      justify-content: flex-end;
-      gap: 40px;
-      font-size: 11px;
-    }
-    .print-zone {
-      grid-column: 1 / -1;
-      text-align: center;
-      padding: 20px 0;
-    }
-    .btn-print {
-      padding: 14px 40px;
-      font-size: 1rem;
       background: #1a56db;
       color: #fff;
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      font-weight: 600;
     }
-    .btn-print:hover { background: #1544b0; }
+    .btn-download:hover { background: #1544b0; }
+    .btn-download:disabled {
+      background: #999;
+      cursor: not-allowed;
+    }
+    .file-upload-wrap {
+      margin-bottom: 16px;
+      padding: 12px;
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+    .file-upload-wrap label {
+      display: block;
+      font-size: 0.85rem;
+      color: #555;
+      margin-bottom: 6px;
+    }
+    .file-upload-wrap input[type=file] {
+      font-size: 0.85rem;
+    }
+    .file-hint {
+      margin: 0 0 8px;
+      font-size: 0.8rem;
+      color: #666;
+    }
     @media (max-width: 900px) {
-      .container { grid-template-columns: 1fr; }
-      .preview-wrap { position: static; }
-      .preview-card { max-height: none; }
-    }
-    @media print {
-      body { background: #fff; padding: 0; }
-      .form-card, .print-zone, .btn-print { display: none !important; }
-      .container { display: block; max-width: none; }
-      .preview-wrap { position: static; }
-      .preview-card {
-        box-shadow: none;
-        padding: 0;
-        max-height: none;
-        overflow: visible;
-      }
-      .preview-inner {
-        min-height: auto;
-        padding: 15px;
-      }
-      @page { size: A4; margin: 15mm; }
+      .main { flex-direction: column; }
+      .form-panel { width: 100%; max-height: 45%; }
+      .preview-panel { width: 100%; min-height: 50%; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="form-card">
-      <h2>섹션1: 부동산 정보</h2>
+  <header class="header">
+    <h1>소유권이전등기신청서 자동작성기</h1>
+  </header>
+
+  <main class="main">
+    <div class="form-panel">
+      <div class="file-upload-wrap">
+        <label>원본 PDF</label>
+        <p class="file-hint">기본: <strong>소유권이전등기신청서(매매).pdf</strong> (이 HTML과 같은 폴더). 다른 양식을 쓰려면 선택하세요.</p>
+        <input type="file" id="pdfFile" accept="application/pdf">
+      </div>
+
+      <h2>부동산 정보</h2>
       <div class="form-section">
         <div class="form-group">
           <label>소재지</label>
-          <input type="text" id="address" placeholder="예: 서울시 강남구 역삼동 123">
-        </div>
-        <div class="form-group">
-          <label>지목</label>
-          <select id="landType">
-            <option value="">선택</option>
-            <option value="대">대</option>
-            <option value="전">전</option>
-            <option value="답">답</option>
-            <option value="임야">임야</option>
-            <option value="도로">도로</option>
-            <option value="기타">기타</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>면적 (㎡)</label>
-          <input type="number" id="area" placeholder="면적" min="0" step="0.01">
+          <input type="text" id="address" placeholder="부동산 표시란">
         </div>
         <div class="form-group">
           <label>거래신고관리번호</label>
-          <input type="text" id="reportNo" placeholder="거래신고관리번호">
+          <input type="text" id="reportNo">
         </div>
         <div class="form-group">
           <label>거래가액 (원)</label>
-          <input type="text" id="price" placeholder="숫자 입력 시 천 단위 콤마 자동">
+          <input type="text" id="price" placeholder="숫자 입력, 콤마 선택">
         </div>
       </div>
 
-      <h2>섹션2: 당사자 정보</h2>
+      <h2>등기원인 · 지분</h2>
       <div class="form-section">
         <div class="form-group">
           <label>등기원인 날짜</label>
-          <input type="date" id="causeDate">
+          <div class="form-row">
+            <input type="text" id="causeYear" placeholder="년" maxlength="4">
+            <input type="text" id="causeMonth" placeholder="월" maxlength="2">
+            <input type="text" id="causeDay" placeholder="일" maxlength="2">
+          </div>
         </div>
         <div class="form-group">
           <label>이전할 지분</label>
           <input type="text" id="shareTransfer" placeholder="예: 1/1">
         </div>
+      </div>
+
+      <h2>등기의무자 (매도인)</h2>
+      <div class="form-section">
         <div class="form-group">
-          <label>등기의무자(매도인) - 성명</label>
-          <input type="text" id="obligorName" placeholder="성명">
+          <label>성명</label>
+          <input type="text" id="obligorName">
         </div>
         <div class="form-group">
-          <label>등기의무자 - 주민등록번호</label>
+          <label>주민등록번호</label>
           <input type="text" id="obligorJumin" placeholder="앞6자리-뒤7자리" maxlength="14">
         </div>
         <div class="form-group">
-          <label>등기의무자 - 주소</label>
-          <input type="text" id="obligorAddr" placeholder="주소">
+          <label>주소</label>
+          <input type="text" id="obligorAddr">
         </div>
         <div class="form-group">
-          <label>등기의무자 - 지분</label>
+          <label>지분</label>
           <input type="text" id="obligorShare" placeholder="예: 1/1">
         </div>
+      </div>
+
+      <h2>등기권리자 (매수인)</h2>
+      <div class="form-section">
         <div class="form-group">
-          <label>등기권리자(매수인) - 성명</label>
-          <input type="text" id="rightHolderName" placeholder="성명">
+          <label>성명</label>
+          <input type="text" id="rightHolderName">
         </div>
         <div class="form-group">
-          <label>등기권리자 - 주민등록번호</label>
+          <label>주민등록번호</label>
           <input type="text" id="rightHolderJumin" placeholder="앞6자리-뒤7자리" maxlength="14">
         </div>
         <div class="form-group">
-          <label>등기권리자 - 주소</label>
-          <input type="text" id="rightHolderAddr" placeholder="주소">
+          <label>주소</label>
+          <input type="text" id="rightHolderAddr">
         </div>
         <div class="form-group">
-          <label>등기권리자 - 지분</label>
+          <label>지분</label>
           <input type="text" id="rightHolderShare" placeholder="예: 1/1">
         </div>
       </div>
 
-      <h2>섹션3: 세금 및 수수료</h2>
+      <h2>세금 · 수수료</h2>
       <div class="form-section">
         <div class="form-group">
-          <label>시가표준액 (원)</label>
-          <input type="text" id="standardValue" placeholder="천 단위 콤마 자동">
-        </div>
-        <div class="form-group">
           <label>취득세 (원)</label>
-          <div class="form-row">
-            <input type="text" id="acquisitionTax" placeholder="취득세">
-            <button type="button" class="btn-calc" id="btnCalcTax">시가표준액의 1.1% 계산</button>
-          </div>
+          <input type="text" id="acquisitionTax">
         </div>
         <div class="form-group">
-          <label>지방교육세 (원) - 취득세의 10%</label>
-          <div class="form-row">
-            <input type="text" id="localEduTax" placeholder="자동 계산">
-            <button type="button" class="btn-calc" id="btnCalcEdu">취득세의 10% 계산</button>
-          </div>
+          <label>지방교육세 (원)</label>
+          <input type="text" id="localEduTax">
         </div>
         <div class="form-group">
           <label>농어촌특별세 (원)</label>
-          <input type="text" id="ruralTax" placeholder="농어촌특별세">
+          <input type="text" id="ruralTax">
         </div>
         <div class="form-group">
           <label>등기신청수수료 (원)</label>
-          <input type="text" id="regFee" placeholder="등기신청수수료">
+          <input type="text" id="regFee">
+        </div>
+      </div>
+
+      <h2>신청인</h2>
+      <div class="form-section">
+        <div class="form-group">
+          <label>신청 날짜</label>
+          <div class="form-row">
+            <input type="text" id="appYear" placeholder="년" maxlength="4">
+            <input type="text" id="appMonth" placeholder="월" maxlength="2">
+            <input type="text" id="appDay" placeholder="일" maxlength="2">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>신청인 성명</label>
+          <input type="text" id="applicantName">
         </div>
       </div>
     </div>
 
-    <div class="preview-wrap">
-      <div class="preview-card">
-        <div class="preview-inner" id="preview">
-          <div class="preview-title">소유권이전등기신청서(매매)</div>
-          <table class="preview-top-table">
-            <tr>
-              <td>즉시접수</td>
-              <td>당일접수</td>
-              <td>제출자</td>
-              <td>총 건</td>
-            </tr>
-          </table>
-          <div class="preview-section-title">1. 부동산 표시</div>
-          <table class="preview-table">
-            <tr><th>소재지</th><td class="wide" id="pvAddress">-</td></tr>
-            <tr><th>지목</th><td id="pvLandType">-</td></tr>
-            <tr><th>면적</th><td id="pvArea">- ㎡</td></tr>
-            <tr><th>거래신고관리번호</th><td id="pvReportNo">-</td></tr>
-            <tr><th>거래가액</th><td id="pvPrice">-</td></tr>
-          </table>
-          <div class="preview-section-title">2. 등기원인 등</div>
-          <table class="preview-table">
-            <tr><th>등기원인</th><td id="pvCauseDate">-</td></tr>
-            <tr><th>등기목적</th><td>소유권이전</td></tr>
-            <tr><th>이전할 지분</th><td id="pvShareTransfer">-</td></tr>
-          </table>
-          <div class="preview-section-title">3. 등기의무자 / 등기권리자</div>
-          <table class="preview-table">
-            <thead>
-              <tr><th>구분</th><th>성명</th><th>주민등록번호</th><th>주소</th><th>지분</th></tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>등기의무자</td>
-                <td id="pvObligorName">-</td>
-                <td id="pvObligorJumin">-</td>
-                <td id="pvObligorAddr">-</td>
-                <td id="pvObligorShare">-</td>
-              </tr>
-              <tr>
-                <td>등기권리자</td>
-                <td id="pvRightHolderName">-</td>
-                <td id="pvRightHolderJumin">-</td>
-                <td id="pvRightHolderAddr">-</td>
-                <td id="pvRightHolderShare">-</td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="preview-section-title">4. 시가표준액 및 세금</div>
-          <table class="preview-table">
-            <tr><th>시가표준액</th><td id="pvStandardValue">-</td></tr>
-            <tr><th>취득세</th><td id="pvAcquisitionTax">-</td></tr>
-            <tr><th>지방교육세</th><td id="pvLocalEduTax">-</td></tr>
-            <tr><th>농어촌특별세</th><td id="pvRuralTax">-</td></tr>
-            <tr><th>등기신청수수료</th><td id="pvRegFee">-</td></tr>
-          </table>
-          <div class="preview-section-title">5. 첨부서면</div>
-          <div class="preview-attach" id="pvAttach">
-            <label><input type="checkbox" id="attach1"> 매매계약서</label>
-            <label><input type="checkbox" id="attach2"> 인감증명서</label>
-            <label><input type="checkbox" id="attach3"> 등본</label>
-            <label><input type="checkbox" id="attach4"> 취득세 납부증명서</label>
-            <label><input type="checkbox" id="attach5"> 기타</label>
-          </div>
-          <div class="preview-sign">
-            <span>신청일: <strong id="pvAppDate">-</strong></span>
-            <span>신청인: ________________ (인)</span>
-          </div>
-        </div>
-      </div>
+    <div class="preview-panel">
+      <div class="preview-placeholder" id="previewPlaceholder">기본 PDF를 불러오는 중…</div>
+      <iframe id="pdfPreview" style="display: none;"></iframe>
     </div>
+  </main>
 
-    <div class="print-zone">
-      <button type="button" class="btn-print" id="btnPrint">출력하기</button>
-    </div>
-  </div>
+  <footer class="footer">
+    <button type="button" class="btn-download" id="btnDownload">PDF 생성 및 다운로드</button>
+  </footer>
 
   <script>
     (function() {
+      var fontUrl = 'https://fonts.gstatic.com/s/notosanskr/v27/PbyxFmXiEBPT4ITbgNA5Cgms3VYcOA-vvnIzzuoyeLTq8H4hfeE.woff2';
+      var fontUrlTtf = 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/notosanskr/NotoSansKR-Regular.ttf';
+      var defaultPdfPath = '소유권이전등기신청서(매매).pdf';
+      var cachedDefaultPdfBytes = null;
+
       function $(id) { return document.getElementById(id); }
-      function formatNumber(val) {
-        if (val === '' || val == null) return '';
-        var n = String(val).replace(/[^0-9]/g, '');
-        return n ? Number(n).toLocaleString() : '';
-      }
-      function parseNumber(val) {
-        if (val === '' || val == null) return 0;
-        return parseInt(String(val).replace(/[^0-9]/g, ''), 10) || 0;
-      }
       function formatJumin(val) {
         var s = String(val).replace(/[^0-9]/g, '').slice(0, 13);
         if (s.length <= 6) return s;
         return s.slice(0, 6) + '-' + s.slice(6);
       }
+      $('obligorJumin').addEventListener('input', function() { this.value = formatJumin(this.value); });
+      $('rightHolderJumin').addEventListener('input', function() { this.value = formatJumin(this.value); });
 
-      var priceEl = $('price');
-      var standardValueEl = $('standardValue');
-      var acquisitionTaxEl = $('acquisitionTax');
-      var localEduTaxEl = $('localEduTax');
-      var ruralTaxEl = $('ruralTax');
-      var regFeeEl = $('regFee');
-      var obligorJuminEl = $('obligorJumin');
-      var rightHolderJuminEl = $('rightHolderJumin');
-
-      priceEl.addEventListener('input', function() {
-        var pos = this.selectionStart;
-        var prev = this.value.length;
-        this.value = formatNumber(this.value);
-        this.setSelectionRange(pos + (this.value.length - prev), pos + (this.value.length - prev));
-        updatePreview();
-      });
-      standardValueEl.addEventListener('input', function() {
-        var pos = this.selectionStart;
-        var prev = this.value.length;
-        this.value = formatNumber(this.value);
-        this.setSelectionRange(pos + (this.value.length - prev), pos + (this.value.length - prev));
-        updatePreview();
-      });
-      acquisitionTaxEl.addEventListener('input', function() {
-        this.value = formatNumber(this.value);
-        updatePreview();
-      });
-      localEduTaxEl.addEventListener('input', function() {
-        this.value = formatNumber(this.value);
-        updatePreview();
-      });
-      ruralTaxEl.addEventListener('input', function() {
-        this.value = formatNumber(this.value);
-        updatePreview();
-      });
-      regFeeEl.addEventListener('input', function() {
-        this.value = formatNumber(this.value);
-        updatePreview();
-      });
-      obligorJuminEl.addEventListener('input', function() {
-        this.value = formatJumin(this.value);
-        updatePreview();
-      });
-      rightHolderJuminEl.addEventListener('input', function() {
-        this.value = formatJumin(this.value);
-        updatePreview();
-      });
-
-      $('btnCalcTax').addEventListener('click', function() {
-        var v = parseNumber(standardValueEl.value);
-        acquisitionTaxEl.value = formatNumber(Math.floor(v * 0.011));
-        updatePreview();
-        var tax = parseNumber(acquisitionTaxEl.value);
-        localEduTaxEl.value = formatNumber(Math.floor(tax * 0.1));
-        updatePreview();
-      });
-      $('btnCalcEdu').addEventListener('click', function() {
-        var tax = parseNumber(acquisitionTaxEl.value);
-        localEduTaxEl.value = formatNumber(Math.floor(tax * 0.1));
-        updatePreview();
-      });
-
-      var ids = ['address','landType','area','reportNo','price','causeDate','shareTransfer',
-        'obligorName','obligorJumin','obligorAddr','obligorShare',
-        'rightHolderName','rightHolderJumin','rightHolderAddr','rightHolderShare',
-        'standardValue','acquisitionTax','localEduTax','ruralTax','regFee'];
-      ids.forEach(function(id) {
-        var el = $(id);
-        if (el && el.type !== 'date') el.addEventListener('input', updatePreview);
-        if (el && el.type === 'date') el.addEventListener('change', updatePreview);
-      });
-      $('landType').addEventListener('change', updatePreview);
-
-      function updatePreview() {
-        $('pvAddress').textContent = $('address').value.trim() || '-';
-        $('pvLandType').textContent = $('landType').value || '-';
-        var area = $('area').value.trim();
-        $('pvArea').textContent = area ? area + ' ㎡' : '-';
-        $('pvReportNo').textContent = $('reportNo').value.trim() || '-';
-        $('pvPrice').textContent = $('price').value ? $('price').value + ' 원' : '-';
-
-        var causeDate = $('causeDate').value;
-        $('pvCauseDate').textContent = causeDate ? causeDate.replace(/-/g, '.') : '-';
-        $('pvShareTransfer').textContent = $('shareTransfer').value.trim() || '-';
-
-        $('pvObligorName').textContent = $('obligorName').value.trim() || '-';
-        $('pvObligorJumin').textContent = $('obligorJumin').value.trim() || '-';
-        $('pvObligorAddr').textContent = $('obligorAddr').value.trim() || '-';
-        $('pvObligorShare').textContent = $('obligorShare').value.trim() || '-';
-
-        $('pvRightHolderName').textContent = $('rightHolderName').value.trim() || '-';
-        $('pvRightHolderJumin').textContent = $('rightHolderJumin').value.trim() || '-';
-        $('pvRightHolderAddr').textContent = $('rightHolderAddr').value.trim() || '-';
-        $('pvRightHolderShare').textContent = $('rightHolderShare').value.trim() || '-';
-
-        $('pvStandardValue').textContent = $('standardValue').value ? $('standardValue').value + ' 원' : '-';
-        $('pvAcquisitionTax').textContent = $('acquisitionTax').value ? $('acquisitionTax').value + ' 원' : '-';
-        $('pvLocalEduTax').textContent = $('localEduTax').value ? $('localEduTax').value + ' 원' : '-';
-        $('pvRuralTax').textContent = $('ruralTax').value ? $('ruralTax').value + ' 원' : '-';
-        $('pvRegFee').textContent = $('regFee').value ? $('regFee').value + ' 원' : '-';
-
-        var today = new Date();
-        var y = today.getFullYear(), m = String(today.getMonth() + 1).padStart(2, '0'), d = String(today.getDate()).padStart(2, '0');
-        $('pvAppDate').textContent = y + '.' + m + '.' + d;
+      function showPdfInPreview(urlOrBlob) {
+        var placeholder = $('previewPlaceholder');
+        var iframe = $('pdfPreview');
+        placeholder.style.display = 'none';
+        iframe.style.display = 'block';
+        iframe.src = urlOrBlob;
+      }
+      function showPlaceholder(msg) {
+        var placeholder = $('previewPlaceholder');
+        var iframe = $('pdfPreview');
+        placeholder.style.display = 'block';
+        placeholder.textContent = msg;
+        iframe.style.display = 'none';
+        iframe.src = '';
       }
 
-      $('btnPrint').addEventListener('click', function() {
-        window.print();
+      (function loadDefaultPdf() {
+        fetch(defaultPdfPath)
+          .then(function(r) { if (!r.ok) throw new Error(); return r.arrayBuffer(); })
+          .then(function(buf) {
+            cachedDefaultPdfBytes = buf;
+            showPdfInPreview(defaultPdfPath);
+          })
+          .catch(function() {
+            showPlaceholder('기본 PDF를 불러오지 못했습니다. 아래에서 「소유권이전등기신청서(매매).pdf」를 선택하거나, 이 HTML과 같은 폴더에 넣어 주세요.');
+          });
+      })();
+
+      $('pdfFile').addEventListener('change', function() {
+        var file = this.files[0];
+        if (!file) {
+          if (cachedDefaultPdfBytes) {
+            showPdfInPreview(defaultPdfPath);
+          } else {
+            showPlaceholder('기본 PDF를 불러오지 못했습니다. 아래에서 파일을 선택하세요.');
+          }
+          return;
+        }
+        showPdfInPreview(URL.createObjectURL(file));
       });
 
-      updatePreview();
+      function getVal(id) { return ($(id) && $(id).value) ? String($(id).value).trim() : ''; }
+
+      $('btnDownload').addEventListener('click', async function() {
+        var fileInput = $('pdfFile');
+        var pdfFile = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+        var bytes = null;
+        var downloadName = '소유권이전등기신청서(매매)_작성완료.pdf';
+        if (pdfFile) {
+          bytes = await pdfFile.arrayBuffer();
+          downloadName = (pdfFile.name && pdfFile.name.replace(/\.pdf$/i, '')) ? pdfFile.name.replace(/\.pdf$/i, '') + '_작성완료.pdf' : downloadName;
+        } else if (cachedDefaultPdfBytes) {
+          bytes = cachedDefaultPdfBytes;
+        }
+        if (!bytes) {
+          alert('원본 PDF를 사용할 수 없습니다. 파일을 선택하거나, 소유권이전등기신청서(매매).pdf를 이 HTML과 같은 폴더에 넣어 주세요.');
+          return;
+        }
+        var btn = this;
+        btn.disabled = true;
+        btn.textContent = '생성 중...';
+        try {
+          var pdfDoc = await PDFLib.PDFDocument.load(bytes);
+          pdfDoc.registerFontkit(fontkit);
+
+          var fontBytes;
+          try {
+            fontBytes = await fetch(fontUrl).then(function(r) { return r.arrayBuffer(); });
+          } catch (e) {
+            fontBytes = await fetch(fontUrlTtf).then(function(r) { return r.arrayBuffer(); });
+          }
+          var font = await pdfDoc.embedFont(fontBytes);
+          var page = pdfDoc.getPage(0);
+          var size = 9;
+
+          var texts = [
+            { v: getVal('address'),           x: 80,  y: 620 },
+            { v: getVal('reportNo'),         x: 130, y: 480 },
+            { v: getVal('price'),             x: 400, y: 480 },
+            { v: getVal('causeYear'),         x: 200, y: 440 },
+            { v: getVal('causeMonth'),        x: 270, y: 440 },
+            { v: getVal('causeDay'),          x: 320, y: 440 },
+            { v: getVal('shareTransfer'),     x: 200, y: 415 },
+            { v: getVal('obligorName'),       x: 150, y: 370 },
+            { v: getVal('obligorJumin'),      x: 250, y: 370 },
+            { v: getVal('obligorAddr'),      x: 390, y: 370 },
+            { v: getVal('obligorShare'),      x: 530, y: 370 },
+            { v: getVal('rightHolderName'),   x: 150, y: 320 },
+            { v: getVal('rightHolderJumin'),  x: 250, y: 320 },
+            { v: getVal('rightHolderAddr'),   x: 390, y: 320 },
+            { v: getVal('rightHolderShare'),  x: 530, y: 320 },
+            { v: getVal('acquisitionTax'),    x: 130, y: 270 },
+            { v: getVal('localEduTax'),       x: 250, y: 270 },
+            { v: getVal('ruralTax'),         x: 370, y: 270 },
+            { v: getVal('regFee'),            x: 480, y: 270 },
+            { v: getVal('appYear'),           x: 200, y: 180 },
+            { v: getVal('appMonth'),          x: 270, y: 180 },
+            { v: getVal('appDay'),            x: 320, y: 180 },
+            { v: getVal('applicantName'),     x: 350, y: 130 }
+          ];
+
+          for (var i = 0; i < texts.length; i++) {
+            if (texts[i].v) {
+              page.drawText(texts[i].v, {
+                x: texts[i].x,
+                y: texts[i].y,
+                size: size,
+                font: font
+              });
+            }
+          }
+
+          var pdfBytes = await pdfDoc.save();
+          var blob = new Blob([pdfBytes], { type: 'application/pdf' });
+          download(blob, downloadName, 'application/pdf');
+        } catch (err) {
+          console.error(err);
+          alert('PDF 생성 중 오류가 났습니다. 콘솔을 확인해 주세요.\n' + (err && err.message ? err.message : String(err)));
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'PDF 생성 및 다운로드';
+        }
+      });
     })();
   </script>
 </body>
